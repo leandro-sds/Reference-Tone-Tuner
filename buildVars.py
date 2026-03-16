@@ -14,33 +14,34 @@ from site_scons.site_tools.NVDATool.utils import _
 # Add-on information variables
 addon_info = AddonInfo(
 	# add-on Name/identifier, internal for NVDA
-	addon_name="addonTemplate",
+	addon_name="referenceToneTuner",
 	# Add-on summary/title, usually the user visible name of the add-on
 	# Translators: Summary/title for this add-on
 	# to be shown on installation and add-on information found in add-on store
-	addon_summary=_("Add-on user visible name"),
+	addon_summary=_("Reference Tone Tuner"),
 	# Add-on description
 	# Translators: Long description to be shown for this add-on on add-on information from add-on store
-	addon_description=_("""Description for the add-on.
-It can span multiple lines."""),
+	addon_description=_("""Afinador por tons de referência para violão/guitarra.
+Use as teclas 1 a 6 para tocar as cordas e afine de ouvido até coincidir.
+Pressione F1 para ajuda e R para repetir em loop."""),
 	# version
-	addon_version="x.y",
+	addon_version="2026.03.16",
 	# Brief changelog for this version
 	# Translators: what's new content for the add-on version to be shown in the add-on store
 	addon_changelog=_("""Changelog for the add-on version.
 It can span multiple lines."""),
 	# Author(s)
-	addon_author="name <name@domain.com>",
+	addon_author="Leandro Souza <leandrosspoeta@gmail.com>",
 	# URL for the add-on documentation support
-	addon_url=None,
+	addon_url="https://github.com/leandro-sds/Reference-Tone-Tuner",
 	# URL for the add-on repository where the source code can be found
-	addon_sourceURL=None,
+	addon_sourceURL="https://github.com/leandro-sds/Reference-Tone-Tuner",
 	# Documentation file name
 	addon_docFileName="readme.html",
 	# Minimum NVDA version supported (e.g. "2019.3.0", minor version is optional)
-	addon_minimumNVDAVersion=None,
+	addon_minimumNVDAVersion="2024.4.1",
 	# Last NVDA version supported/tested (e.g. "2024.4.0", ideally more recent than minimum version)
-	addon_lastTestedNVDAVersion=None,
+	addon_lastTestedNVDAVersion="2025.3.3",
 	# Add-on update channel (default is None, denoting stable releases,
 	# and for development releases, use "dev".)
 	# Do not change unless you know what you are doing!
