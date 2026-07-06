@@ -23,13 +23,14 @@ addon_info = AddonInfo(
 	# Translators: Long description to be shown for this add-on on add-on information from add-on store
 	addon_description=_("""Afinador por tons de referência para violão/guitarra.
 Use as teclas 1 a 6 para tocar as cordas e afine de ouvido até coincidir.
-Pressione F1 para ajuda e R para repetir em loop."""),
+Pressione F1 para ajuda, R para repetir em loop e A/D para ajustar o intervalo do loop."""),
 	# version
-	addon_version="2026.05.02",
+	addon_version="2026.07.06",
 	# Brief changelog for this version
 	# Translators: what's new content for the add-on version to be shown in the add-on store
-	addon_changelog=_("""Changelog for the add-on version.
-It can span multiple lines."""),
+	addon_changelog=_("""* Novo: intervalo do loop agora é ajustável com as teclas A (aumentar) e D (diminuir), padrão de 2,0 segundos.
+* Correção: ao tocar uma corda/acorde único sem loop, a tecla Esc às vezes não fechava a janela na primeira tentativa.
+* Menos falas desnecessárias ao abrir a janela (intervalo do loop e atalho do R só são anunciados quando usados)."""),
 	# Author(s)
 	addon_author="Leandro Souza <leandrosspoeta@gmail.com>",
 	# URL for the add-on documentation support

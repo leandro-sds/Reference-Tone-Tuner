@@ -14,7 +14,9 @@ addonHandler.initTranslation()
 ADDON_TITLE = _("Reference Tone Tuner")
 ADDON_CATEGORY = _("Reference Tone Tuner")
 
-STRINGS = [
+# Renomeado de "STRINGS" para "CORDAS": o nome antigo era ambíguo
+# (parecia se referir a strings de texto, e não a cordas do violão).
+CORDAS = [
     (_("1ª corda (Mi agudo)"), "1e.WAV"),
     (_("2ª corda (Si)"), "2B.WAV"),
     (_("3ª corda (Sol)"), "3G.WAV"),
@@ -25,6 +27,12 @@ STRINGS = [
 
 ACORDE_SOL = "Sol.WAV"
 ACORDE_MI = "Mi.WAV"
+
+# Intervalo padrão do loop (em milissegundos) e limites de ajuste.
+LOOP_INTERVAL_PADRAO_MS = 2000
+LOOP_INTERVAL_MIN_MS = 1000
+LOOP_INTERVAL_MAX_MS = 10000
+LOOP_INTERVAL_PASSO_MS = 250
 
 
 def _pasta_arquivos():
@@ -55,6 +63,8 @@ class JanelaAjuda(wx.Dialog):
             ("S", _("Toca o acorde de Sol maior")),
             ("M", _("Toca o acorde de Mi maior")),
             ("R", _("Ativa/desativa a repetição em loop")),
+            ("A", _("Aumenta o intervalo do loop")),
+            ("D", _("Diminui o intervalo do loop")),
             ("F1", _("Mostra esta ajuda")),
             ("Esc", _("Para o som / Fecha a janela")),
             ("Alt+F4", _("Sai")),
@@ -104,6 +114,11 @@ class JanelaAfinador(wx.Dialog):
         self.pastaSons = _pasta_arquivos()
         self.janelaAjuda = None
 
+        # Intervalo (ms) usado ao repetir uma sequência em loop.
+        # Ao tocar uma nota/acorde único, soma-se 1000ms a este valor,
+        # para dar um respiro maior entre repetições de um som isolado.
+        self.loopIntervalMs = LOOP_INTERVAL_PADRAO_MS
+
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self._tick, self.timer)
 
@@ -118,13 +133,20 @@ class JanelaAfinador(wx.Dialog):
 
         info = wx.StaticText(
             pnl,
-            label=_("Use as teclas 1 a 6 para tocar as cordas, ou pressione F1 para ajuda."),
+            label=_("Pressione F1 para ver a lista de atalhos disponíveis."),
         )
         mainSizer.Add(info, 0, wx.ALL, 10)
 
-        self.chkLoop = wx.CheckBox(pnl, label=_("&Repetir em loop (R)"))
+        self.chkLoop = wx.CheckBox(pnl, label=_("&Repetir em loop"))
         self.chkLoop.Bind(wx.EVT_CHECKBOX, self._ao_mudar_loop)
         mainSizer.Add(self.chkLoop, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+
+        # O rótulo de intervalo começa vazio de propósito: só é preenchido
+        # (e só é falado) quando o usuário efetivamente ajusta o valor com
+        # A/D, para não sobrecarregar o usuário de informação logo ao abrir
+        # a janela.
+        self.lblIntervalo = wx.StaticText(pnl, label="")
+        mainSizer.Add(self.lblIntervalo, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
 
         btnRow = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -144,6 +166,11 @@ class JanelaAfinador(wx.Dialog):
 
         wx.CallLater(100, self.chkLoop.SetFocus)
 
+    def _texto_intervalo(self):
+        return _("Intervalo do loop: {0:.1f} segundos (use A / D para ajustar)").format(
+            self.loopIntervalMs / 1000
+        )
+
     def _mostrar_ajuda(self, evt=None):
         if self.janelaAjuda:
             try:
@@ -157,8 +184,28 @@ class JanelaAfinador(wx.Dialog):
         self.janelaAjuda.Show()
 
     def _ao_mudar_loop(self, event):
-        if not self.chkLoop.GetValue():
+        if self.chkLoop.GetValue():
+            ui.message(
+                _("Loop ativado. Pressione A para aumentar o intervalo ou D para diminuir.")
+            )
+        else:
+            ui.message(_("Loop desativado"))
             self._parar()
+
+    def _ajustar_intervalo_loop(self, delta):
+        anterior = self.loopIntervalMs
+        self.loopIntervalMs = max(
+            LOOP_INTERVAL_MIN_MS, min(LOOP_INTERVAL_MAX_MS, self.loopIntervalMs + delta)
+        )
+        self.lblIntervalo.SetLabel(self._texto_intervalo())
+
+        segundos = self.loopIntervalMs / 1000
+        if self.loopIntervalMs == anterior:
+            ui.message(
+                _("Intervalo do loop já está no limite: {0:.1f} segundos").format(segundos)
+            )
+        else:
+            ui.message(_("Intervalo do loop: {0:.1f} segundos").format(segundos))
 
     def _capturar_teclas(self, event):
         key = event.GetKeyCode()
@@ -180,12 +227,16 @@ class JanelaAfinador(wx.Dialog):
             return
 
         if key == ord("R"):
-            estado = self.chkLoop.GetValue()
-            novo = not estado
-            self.chkLoop.SetValue(novo)
-            ui.message(_("Loop ativado") if novo else _("Loop desativado"))
-            if not novo:
-                self._parar()
+            self.chkLoop.SetValue(not self.chkLoop.GetValue())
+            self._ao_mudar_loop(None)
+            return
+
+        if key == ord("A"):
+            self._ajustar_intervalo_loop(LOOP_INTERVAL_PASSO_MS)
+            return
+
+        if key == ord("D"):
+            self._ajustar_intervalo_loop(-LOOP_INTERVAL_PASSO_MS)
             return
 
         if key == ord("T"):
@@ -240,12 +291,10 @@ class JanelaAfinador(wx.Dialog):
         if not self.fila:
             return
 
-        modoSequencia = len(self.fila) > 1
-
         if self.indice < len(self.fila):
             item = self.fila[self.indice]
             if isinstance(item, int):
-                arquivo = STRINGS[item][1]
+                arquivo = CORDAS[item][1]
             else:
                 arquivo = item
 
@@ -256,7 +305,19 @@ class JanelaAfinador(wx.Dialog):
                 else:
                     if self.chkLoop.GetValue():
                         self.indice = 0
-                        self.timer.Start(3000 if modoSequencia else 4000, wx.TIMER_ONE_SHOT)
+                        self.timer.Start(self.loopIntervalMs, wx.TIMER_ONE_SHOT)
+                    else:
+                        # CORREÇÃO: antes a fila não era limpa aqui. Isso fazia
+                        # com que, após tocar uma corda/acorde único sem loop,
+                        # self.fila continuasse com um item "fantasma" mesmo
+                        # com a reprodução já concluída. Consequência prática:
+                        # o próximo Esc entendia (erradamente) que ainda havia
+                        # algo tocando e apenas exibia "Parado" em vez de
+                        # fechar a janela. Aqui limpamos apenas o estado da
+                        # fila, sem chamar self._parar() (que faria
+                        # SND_PURGE e cortaria o som que acabou de iniciar).
+                        self.fila = []
+                        self.indice = 0
             else:
                 self._parar()
 
@@ -312,6 +373,19 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             toolsMenu.Remove(self.menuItem)
         except Exception:
             pass
+
+        # CORREÇÃO: se o addon for recarregado/desativado com a janela do
+        # afinador aberta, o timer e o som em reprodução ficavam "órfãos"
+        # (a janela continuava existindo e o timer continuava disparando
+        # mesmo com o GlobalPlugin já finalizado). Agora fechamos qualquer
+        # janela aberta, o que também para o timer e purga o som via
+        # _ao_fechar -> _parar().
+        try:
+            for child in list(gui.mainFrame.Children):
+                if isinstance(child, JanelaAfinador):
+                    child.Close()
+        except Exception as e:
+            log.error(f"Erro ao fechar janela do afinador durante terminate: {e}")
 
     @scriptHandler.script(
         category=ADDON_CATEGORY,

@@ -20,8 +20,12 @@ Na janela, utilize os seguintes comandos:
 - **S** → acorde de Sol maior  
 - **M** → acorde de Mi maior  
 - **R** → repetir em loop (liga/desliga)  
+- **A** → aumenta o intervalo do loop  
+- **D** → diminui o intervalo do loop  
 - **F1** → ajuda com todos os atalhos  
 - **Esc** → para o som (ou fecha a janela)
+
+O intervalo padrão do loop é de **2,0 segundos**, adequado para a maioria das cordas. Use **A** e **D** para ajustar esse intervalo entre 1,0 e 10,0 segundos conforme sua necessidade.
 
 ---
 
